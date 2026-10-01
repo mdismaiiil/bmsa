@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BMSA Pro | Construction Materials Procurement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--ink:#0F172A;--steel:#1E293B;--amber:#D97706;--amber-d:#B45309;--bg:#F8FAFC;--card:#fff;--line:#E2E8F0;--mute:#64748B;--ok:#047857;--okbg:#D1FAE5;--warn:#92400E;--warnbg:#FEF3C7;--bad:#B91C1C;--badbg:#FEE2E2;--r:6px}
+*{box-sizing:border-box;margin:0}
+html{scroll-padding-top:72px}
+body{font:14px/1.5 'IBM Plex Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+header{background:var(--ink);color:#fff;position:sticky;top:0;z-index:20;border-bottom:3px solid var(--amber)}
+.bar{max-width:1320px;margin:auto;padding:12px 24px;display:flex;align-items:center;gap:20px}
+.brand{font-weight:700;font-size:18px;letter-spacing:.2px}.brand small{display:block;font-weight:400;font-size:12px;color:#94A3B8}
+.bar .sp{flex:1}
+.search{width:min(340px,40vw);padding:8px 12px;border-radius:var(--r);border:1px solid #334155;background:var(--steel);color:#fff}
+.search::placeholder{color:#94A3B8}
+.cartbtn{display:none;background:var(--amber);color:#fff;border:0;border-radius:var(--r);padding:8px 14px;font-weight:600;cursor:pointer}
+main{max-width:1320px;margin:auto;padding:24px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}
+h2{font-size:18px;font-weight:600}
+.sec{margin-bottom:28px}
+.sechead{display:flex;justify-content:space-between;align-items:end;margin-bottom:12px;gap:12px;flex-wrap:wrap}
+.sechead p{color:var(--mute);font-size:13px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+/* estimator */
+.est{border-left:4px solid var(--amber);padding:20px;display:grid;grid-template-columns:1fr 1.2fr;gap:24px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:12px;font-weight:600;color:var(--steel);margin-bottom:4px}
+input,select{width:100%;padding:8px 10px;border:1px solid #CBD5E1;border-radius:var(--r);background:#fff}
+.full{grid-column:1/-1}
+.res{background:var(--ink);color:#fff;border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px}
+.res table{width:100%;border-collapse:collapse}
+.res td{padding:6px 0;border-bottom:1px solid #334155}
+.res td:last-child{text-align:right;font-family:'IBM Plex Mono',monospace}
+.res .tot td{border:0;font-weight:700;color:#FBBF24;padding-top:10px}
+.muted{color:#94A3B8;font-size:12px}
+.btn{border:0;border-radius:var(--r);padding:9px 14px;font-weight:600;cursor:pointer;background:var(--amber);color:#fff}
+.btn:hover{background:var(--amber-d)}
+.btn.ghost{background:#fff;color:var(--steel);border:1px solid #CBD5E1}.btn.ghost:hover{background:var(--bg)}
+.btn.block{width:100%}.btn:disabled{opacity:.45;cursor:not-allowed}
+/* catalog */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 14px;cursor:pointer;font-size:13px}
+.tab[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{display:flex;flex-direction:column;overflow:hidden}
+.card img{width:100%;height:150px;object-fit:cover;background:#CBD5E1;display:block}
+.cb{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.cb h3{font-size:15px;font-weight:600;line-height:1.3}
+.meta{display:flex;gap:6px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#E2E8F0;color:var(--steel)}
+.badge.is{background:#DBEAFE;color:#1E40AF}.badge.ok{background:var(--okbg);color:var(--ok)}.badge.low{background:var(--warnbg);color:var(--warn)}.badge.out{background:var(--badbg);color:var(--bad)}
+.spec{color:var(--mute);font-size:12px}
+.tiers{font-size:12px;color:var(--amber-d)}
+.price{margin-top:auto;display:flex;justify-content:space-between;align-items:baseline}
+.price b{font-size:20px;font-family:'IBM Plex Mono',monospace}.price span{color:var(--mute);font-size:12px}
+.addrow{display:flex;gap:8px}.addrow input{width:80px}.addrow .btn{flex:1}
+/* summary */
+aside{position:sticky;top:84px;max-height:calc(100vh - 100px);display:flex;flex-direction:column}
+aside .panel{display:flex;flex-direction:column;overflow:hidden}
+.sh{padding:14px 16px;background:var(--steel);color:#fff;display:flex;justify-content:space-between;align-items:center}
+.lines{overflow:auto;padding:4px 16px;max-height:260px}
+.line{padding:10px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:13px}
+.line .q{display:flex;align-items:center;gap:4px;margin-top:4px}
+.line .q button{width:24px;height:24px;border:1px solid #CBD5E1;background:#fff;border-radius:4px;cursor:pointer}
+.line .q input{width:64px;padding:2px 6px;text-align:center}
+.line .rm{background:none;border:0;color:var(--bad);cursor:pointer;font-size:12px}
+.empty{padding:28px 16px;text-align:center;color:var(--mute)}
+.sb{padding:14px 16px;border-top:1px solid var(--line)}
+.row{display:flex;justify-content:space-between;padding:3px 0;font-size:13px}
+.row span:last-child{font-family:'IBM Plex Mono',monospace}
+.row.disc span:last-child{color:var(--ok)}
+.row.grand{font-size:16px;font-weight:700;border-top:2px solid var(--ink);margin-top:8px;padding-top:10px}
+/* modal + toast */
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.open{display:flex}
+.mbox{background:#fff;border-radius:8px;width:min(480px,100%);max-height:90vh;overflow:auto;padding:22px}
+.mbox h2{margin-bottom:4px}.mbox p.s{color:var(--mute);margin-bottom:14px}
+.mbox .fields{margin-bottom:16px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.hint{font-size:12px;margin-top:3px;color:var(--mute)}.hint.bad{color:var(--bad)}
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:100}
+.toast{background:var(--ink);color:#fff;padding:10px 14px;border-radius:var(--r);border-left:4px solid var(--ok);box-shadow:0 8px 24px rgba(15,23,42,.3);max-width:320px;animation:in .2s ease-out}
+.toast.error{border-color:var(--bad)}.toast.info{border-color:var(--amber)}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+@media(max-width:1000px){main{grid-template-columns:1fr}.est{grid-template-columns:1fr}.cartbtn{display:block}
+aside{position:fixed;inset:0;max-height:none;z-index:40;background:rgba(15,23,42,.6);padding:60px 12px 12px;display:none}aside.open{display:flex}}
+[hidden]{display:none!important}
+.adm{grid-template-columns:minmax(0,1fr)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:var(--r);padding:12px 14px}
+.stat span{display:block;color:var(--mute);font-size:12px}.stat b{font-size:19px;font-family:'IBM Plex Mono',monospace}
+.tw{overflow:auto}.tb{width:100%;border-collapse:collapse;background:#fff}
+.tb th,.tb td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.tb th{background:var(--steel);color:#fff;font-weight:600;font-size:12px}
+.tb img{width:48px;height:36px;object-fit:cover;border-radius:4px;background:#CBD5E1;display:block}
+.tb .n{text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.mini{padding:4px 10px;font-size:12px}.danger{color:var(--bad)!important}
+.adminbtn{background:transparent;color:#fff;border:1px solid #475569;border-radius:var(--r);padding:8px 14px;cursor:pointer}
+.adminbtn:hover{background:var(--steel)}
+.prev{width:100%;height:120px;object-fit:cover;border-radius:var(--r);background:#E2E8F0}
+.mbox.wide{width:min(640px,100%)}
+@media(prefers-reduced-motion:reduce){.toast{animation:none}}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand">BMSA Pro<small>Construction materials procurement</small></div><div class="sp"></div>
+  <input id="q" class="search" type="search" placeholder="Search material, brand or IS code" aria-label="Search catalog">
+  <button class="adminbtn" id="adminBtn">Admin</button><button class="cartbtn" id="openCart">Order (<span id="badge">0</span>)</button>
+</div></header>
+
+<main id="shop">
+<div>
+  <section class="sec" id="estimator">
+    <div class="sechead"><div><h2>Slab material estimator</h2><p>Dry volume uses a 1.54 factor over wet volume; one 50 kg bag is taken as 1.25 cu.ft.</p></div></div>
+    <div class="panel est">
+      <div class="fields">
+        <div><label for="eL">Length (ft)</label><input id="eL" type="number" min="1" step="0.5" value="20"></div>
+        <div><label for="eW">Width (ft)</label><input id="eW" type="number" min="1" step="0.5" value="15"></div>
+        <div><label for="eT">Thickness (in)</label><input id="eT" type="number" min="1" step="0.5" value="5"></div>
+        <div><label for="eM">Mix grade</label><select id="eM"><option value="M15">M15 (1:2:4)</option><option value="M20" selected>M20 (1:1.5:3)</option><option value="M25">M25 (1:1:2)</option></select></div>
+        <div class="full"><label for="eW2">Wastage allowance</label><select id="eWs"><option value="0">None</option><option value="0.05" selected>5%</option><option value="0.1">10%</option></select></div>
+      </div>
+      <div class="res">
+        <table id="estTable"></table>
+        <button class="btn" id="estAdd">Add all required materials to cart</button>
+        <span class="muted">Indicative quantities for planning. Confirm with your structural engineer before ordering.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sechead"><div><h2>Material catalog</h2><p id="count"></p></div></div>
+    <div class="tabs" id="tabs" role="group" aria-label="Category filter"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+</div>
+
+<aside id="aside"><div class="panel" style="width:100%">
+  <div class="sh"><strong>Order summary</strong><button class="btn ghost" id="closeCart" style="padding:3px 10px;display:none">Close</button></div>
+  <div class="lines" id="lines"></div>
+  <div class="sb">
+    <label for="dest">Delivery destination</label>
+    <select id="dest"></select>
+    <div id="totals" style="margin-top:12px"></div>
+    <button class="btn block" id="checkout" style="margin-top:12px">Proceed to checkout</button>
+    <button class="btn ghost block" id="clear" style="margin-top:8px">Clear order</button>
+    <p class="hint">Prices are indicative ex-works rates and subject to dealer confirmation.</p>
+  </div>
+</div></aside>
+</main>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="mbox">
+  <h2 id="mt">Checkout</h2><p class="s">Provide business details to generate your quotation.</p>
+  <div class="fields">
+    <div class="full"><label for="cName">Business / site name</label><input id="cName" autocomplete="organization"></div>
+    <div class="full"><label for="gst">GST / Business registration ID</label><input id="gst" maxlength="20" placeholder="e.g. 27ABCDE1234F1Z5"><div class="hint" id="gstHint">Optional for retail buyers. Required to claim input tax credit.</div></div>
+    <div class="full"><label for="dealer">Supplying dealer</label><select id="dealer"></select></div>
+    <div class="full"><label for="addr">Delivery address</label><input id="addr" autocomplete="street-address"></div>
+  </div>
+  <div class="acts">
+    <button class="btn ghost" data-close>Cancel</button>
+    <button class="btn ghost" id="xPdf">Export PDF</button>
+    <button class="btn ghost" id="xXls">Export XLSX</button>
+    <button class="btn" id="place">Place order</button>
+  </div>
+</div></div>
+<main id="admin" class="adm" hidden><div>
+  <div class="sechead"><div><h2>Admin console</h2><p>Manage the catalog, dealers and orders. Data is stored in this browser only.</p></div></div>
+  <div class="stats" id="aStats"></div>
+  <div class="tabs"><button class="tab" data-atab="materials">Materials</button><button class="tab" data-atab="dealers">Dealers</button><button class="tab" data-atab="orders">Orders</button></div>
+  <div id="aBody"></div>
+</div></main>
+
+<div class="modal" id="lm" role="dialog" aria-modal="true" aria-labelledby="lmt"><div class="mbox">
+  <h2 id="lmt">Admin login</h2><p class="s">Sign in to manage materials, dealers and orders.</p>
+  <div class="fields"><div class="full"><label for="lUser">Username</label><input id="lUser" autocomplete="username"></div>
+  <div class="full"><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password"></div></div>
+  <div class="acts"><button class="btn ghost" data-close>Cancel</button><button class="btn" id="lgo">Sign in</button></div>
+</div></div>
+
+<div class="modal" id="pm" role="dialog" aria-modal="true" aria-labelledby="pmt"><div class="mbox wide">
+  <h2 id="pmt">Add material</h2><p class="s">Changes appear in the storefront immediately.</p>
+  <div class="fields">
+    <div class="full"><label for="pName">Name</label><input id="pName"></div>
+    <div><label for="pCat">Category</label><input id="pCat" list="catList"><datalist id="catList"></datalist></div>
+    <div><label for="pIs">IS code</label><input id="pIs"></div>
+    <div><label for="pGrade">Grade / type</label><input id="pGrade"></div>
+    <div><label for="pUnit">Unit</label><input id="pUnit" placeholder="e.g. 50 kg bag"></div>
+    <div><label for="pPrice">Price per unit (INR)</label><input id="pPrice" type="number" min="0" step="0.01"></div>
+    <div><label for="pWt">Weight per unit (kg)</label><input id="pWt" type="number" min="0" step="0.1"></div>
+    <div><label for="pStock">Stock (units)</label><input id="pStock" type="number" min="0"></div><div></div>
+    <div><label for="pT1m">Tier 1 minimum qty</label><input id="pT1m" type="number" min="0"></div>
+    <div><label for="pT1p">Tier 1 discount %</label><input id="pT1p" type="number" min="0" max="50"></div>
+    <div><label for="pT2m">Tier 2 minimum qty</label><input id="pT2m" type="number" min="0"></div>
+    <div><label for="pT2p">Tier 2 discount %</label><input id="pT2p" type="number" min="0" max="50"></div>
+    <div class="full"><label for="pSpec">Description</label><input id="pSpec"></div>
+    <div class="full"><label for="pUrl">Image URL</label><input id="pUrl" placeholder="https://..."></div>
+    <div class="full"><label for="pFile">Or upload an image</label><input id="pFile" type="file" accept="image/*"></div>
+    <div class="full"><img class="prev" id="pPrev" alt="Image preview"></div>
+  </div>
+  <div class="acts"><button class="btn ghost" data-close>Cancel</button><button class="btn" id="pSave">Save material</button></div>
+</div></div>
+
+<div class="modal" id="dm" role="dialog" aria-modal="true" aria-labelledby="dmt"><div class="mbox">
+  <h2 id="dmt">Add dealer</h2><p class="s">Dealers appear in the checkout dealer list.</p>
+  <div class="fields"><div class="full"><label for="dName">Dealer name</label><input id="dName"></div>
+  <div><label for="dCity">City</label><select id="dCity"></select></div>
+  <div><label for="dPhone">Phone</label><input id="dPhone" type="tel"></div>
+  <div class="full"><label for="dSupply">Supplies</label><input id="dSupply" placeholder="e.g. Cement, steel"></div></div>
+  <div class="acts"><button class="btn ghost" data-close>Cancel</button><button class="btn" id="dSave">Save dealer</button></div>
+</div></div>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+'use strict';
+const IMG='https://images.unsplash.com/';
+const Q='?auto=format&fit=crop&w=600&q=70';
+const TIERS_BAG=[{min:500,pct:10},{min:100,pct:5}];
+const loadLS=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const saveLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){toast('Browser storage is full or unavailable. Changes last for this session only.','error');return false}};
+const imgSrc=p=>/^(https?:|data:)/.test(p.img||'')?p.img:IMG+(p.img||'')+Q;
+const DEF_P=[
+ {id:'cem1',cat:'Cement & Concrete',name:'UltraTech OPC 53 Grade Cement',is:'IS 12269',grade:'OPC 53',unit:'50 kg bag',price:395,wt:50,stock:12400,spec:'High early strength; suited to RCC, slabs and precast.',img:'photo-1504307651254-35680f356dfd',tiers:TIERS_BAG},
+ {id:'cem2',cat:'Cement & Concrete',name:'ACC Super Gold PPC Cement',is:'IS 1489',grade:'PPC',unit:'50 kg bag',price:372,wt:50,stock:8900,spec:'Fly-ash blend; lower heat of hydration, good for plaster and masonry.',img:'photo-1590069261209-f8e9b8642343',tiers:TIERS_BAG},
+ {id:'rmc',cat:'Cement & Concrete',name:'Ready-Mix Concrete (M25)',is:'IS 4926',grade:'M25',unit:'cu.m',price:5600,wt:2400,stock:180,spec:'Plant-batched, transit-mixer delivery. 75-100 mm slump.',img:'photo-1581094288338-2314dddb7ece',tiers:[{min:50,pct:5},{min:150,pct:8}]},
+ {id:'st1',cat:'Steel & TMT Bars',name:'Tata Tiscon 550D TMT Rebars (8-25 mm)',is:'IS 1786',grade:'Fe 550D',unit:'tonne',price:67500,wt:1000,stock:320,spec:'Ductile, earthquake-resistant; sizes 8, 10, 12, 16, 20, 25 mm.',img:'photo-1535732759880-bbd5c7265e3f',tiers:[{min:10,pct:3},{min:25,pct:5}]},
+ {id:'st2',cat:'Steel & TMT Bars',name:'JSW Neosteel 500D Fe TMT Bars',is:'IS 1786',grade:'Fe 500D',unit:'tonne',price:65800,wt:1000,stock:45,spec:'Corrosion-resistant coating; 12 m standard lengths.',img:'photo-1504917595217-d4dc5ebe6122',tiers:[{min:10,pct:3},{min:25,pct:5}]},
+ {id:'ag1',cat:'Aggregates & Masonry',name:'Manufactured Sand (M-Sand)',is:'IS 383',grade:'Zone II',unit:'cu.ft',price:58,wt:45,stock:90000,spec:'Washed, graded for concrete and plaster.',img:'photo-1518709268805-4e9042af9f23',tiers:[{min:1000,pct:5},{min:5000,pct:8}]},
+ {id:'ag2',cat:'Aggregates & Masonry',name:'20 mm Crushed Blue Metal Aggregate',is:'IS 383',grade:'20 mm nominal',unit:'cu.ft',price:46,wt:42,stock:120000,spec:'Basalt, angular, low flakiness.',img:'photo-1541888946425-d81bb19240f5',tiers:[{min:1000,pct:5},{min:5000,pct:8}]},
+ {id:'aac',cat:'Aggregates & Masonry',name:'AAC Lightweight Concrete Blocks (600x200x150 mm)',is:'IS 2185 (Pt 3)',grade:'Grade 4 MPa',unit:'block',price:68,wt:14,stock:22000,spec:'Lightweight, thermally insulating; faster wall build-up.',img:'photo-1503387762-592deb58ef4e',tiers:[{min:1000,pct:5},{min:5000,pct:10}]},
+ {id:'brk',cat:'Aggregates & Masonry',name:'Red Clay Bricks (Class 100)',is:'IS 1077',grade:'Class 100',unit:'piece',price:9.5,wt:3.2,stock:60000,spec:'Compressive strength 10 MPa minimum.',img:'photo-1523413363574-c30aa1c2a516',tiers:[{min:5000,pct:5},{min:20000,pct:8}]},
+ {id:'wp1',cat:'Finishes & Waterproofing',name:'Asian Paints SmartCare Damp Proof (20 L)',is:'IS 2645',grade:'Interior / exterior',unit:'20 L pail',price:5850,wt:26,stock:140,spec:'Elastomeric coat for walls and terraces; roller or brush.',img:'photo-1562259949-e8e7689d7828',tiers:[{min:20,pct:4},{min:50,pct:7}]},
+ {id:'wp2',cat:'Finishes & Waterproofing',name:'Dr. Fixit LW+ Waterproofing Liquid (5 L)',is:'IS 2645',grade:'Integral admixture',unit:'5 L can',price:690,wt:6,stock:18,spec:'Mixed into concrete and mortar to cut water ingress.',img:'photo-1589939705384-5185137a7f0f',tiers:[{min:20,pct:4},{min:50,pct:7}]},
+ {id:'cem3',cat:'Cement & Concrete',name:'Ambuja Cement PPC',is:'IS 1489',grade:'PPC',unit:'50 kg bag',price:368,wt:50,stock:15200,spec:'Blended cement for plaster, masonry and general RCC.',img:'photo-1621905251189-08b45d6a269e',tiers:TIERS_BAG},
+ {id:'cem4',cat:'Cement & Concrete',name:'Dalmia OPC 43 Grade Cement',is:'IS 269',grade:'OPC 43',unit:'50 kg bag',price:380,wt:50,stock:6400,spec:'General construction, flooring and non-structural concrete.',img:'photo-1581092918056-0c4c3acd3789',tiers:TIERS_BAG},
+ {id:'adm1',cat:'Cement & Concrete',name:'Fosroc Conplast SP430 Admixture (20 L)',is:'IS 9103',grade:'Superplasticiser',unit:'20 L can',price:2150,wt:23,stock:210,spec:'Cuts water demand and lifts workability and strength.',img:'photo-1558618666-fcd25c85cd64',tiers:[{min:20,pct:4},{min:50,pct:7}]},
+ {id:'bw',cat:'Steel & TMT Bars',name:'Binding Wire (18 gauge, annealed)',is:'IS 280',grade:'18 SWG',unit:'kg',price:82,wt:1,stock:5200,spec:'Soft annealed wire for tying rebar cages.',img:'photo-1565008447742-97f6f38c985c',tiers:[{min:200,pct:4},{min:1000,pct:7}]},
+ {id:'fab',cat:'Aggregates & Masonry',name:'Fly Ash Bricks',is:'IS 12894',grade:'Class 75',unit:'piece',price:7,wt:2.8,stock:85000,spec:'Uniform, lighter than clay; reduces plaster consumption.',img:'photo-1600585154340-be6161a56a0c',tiers:[{min:5000,pct:5},{min:20000,pct:8}]},
+ {id:'chb',cat:'Aggregates & Masonry',name:'Solid Concrete Blocks (400x200x200 mm)',is:'IS 2185 (Pt 1)',grade:'Grade 5 MPa',unit:'block',price:42,wt:18,stock:9800,spec:'Load-bearing and partition masonry.',img:'photo-1600566753190-17f0baa2a6c3',tiers:[{min:1000,pct:5},{min:5000,pct:8}]},
+ {id:'ply',cat:'Timber & Boards',name:'BWP Marine Plywood (19 mm, 8x4 ft)',is:'IS 710',grade:'BWP',unit:'sheet',price:3650,wt:28,stock:120,spec:'Boiling-water-proof; shuttering, wet areas and furniture.',img:'photo-1556228453-efd6c1ff04f6',tiers:[{min:20,pct:4},{min:50,pct:7}]},
+ {id:'tile',cat:'Tiles & Roofing',name:'Vitrified Floor Tiles (600x600 mm)',is:'IS 15622',grade:'Glazed, PEI 4',unit:'sq.ft',price:44,wt:4,stock:26000,spec:'Low water absorption; living and commercial floors.',img:'photo-1513694203232-719a280e022f',tiers:[{min:1000,pct:5},{min:5000,pct:8}]},
+ {id:'gi',cat:'Tiles & Roofing',name:'GI Corrugated Roofing Sheet (8 ft, 0.5 mm)',is:'IS 277',grade:'Zinc coated',unit:'sheet',price:760,wt:8,stock:640,spec:'Industrial sheds, godowns and site offices.',img:'photo-1621905252507-b35492cc74b4',tiers:[{min:100,pct:4},{min:300,pct:7}]},
+ {id:'cpvc',cat:'Plumbing & Electrical',name:'Astral CPVC Pipe 1 inch (3 m, SDR 11)',is:'IS 15778',grade:'CPVC',unit:'3 m length',price:640,wt:2.5,stock:900,spec:'Hot and cold potable water lines.',img:'photo-1584622650111-993a426fbf0a',tiers:[{min:50,pct:4},{min:200,pct:7}]},
+ {id:'wire',cat:'Plumbing & Electrical',name:'Polycab FR Copper Wire 2.5 sq.mm (90 m)',is:'IS 694',grade:'FR, 1100 V',unit:'90 m coil',price:2480,wt:3.2,stock:42,spec:'Flame-retardant house wiring.',img:'photo-1558002038-1055907df827',tiers:[{min:20,pct:3},{min:50,pct:6}]}
+];
+const DEF_D=[
+ {id:'d1',name:'Shree Samarth Traders',city:'Solapur',phone:'+91 90000 00101',supply:'Cement, steel, aggregates'},
+ {id:'d2',name:'Panchganga Supplies',city:'Kolhapur',phone:'+91 90000 00102',supply:'Masonry, tiles, roofing'},
+ {id:'d3',name:'Deccan Build Mart',city:'Pune',phone:'+91 90000 00103',supply:'Cement, plumbing, electrical'},
+ {id:'d4',name:'Konkan Steel & Cement',city:'Mumbai',phone:'+91 90000 00104',supply:'TMT, cement, admixtures'}
+];
+let P=loadLS('bmsa_products',null)||DEF_P.map(p=>({...p})),DL=loadLS('bmsa_dealers',null)||DEF_D.map(d=>({...d})),ORD=loadLS('bmsa_orders',[]);
+const savP=()=>saveLS('bmsa_products',P),savD=()=>saveLS('bmsa_dealers',DL);
+const DEST={Solapur:{base:1500,perT:180},Kolhapur:{base:2600,perT:310},Pune:{base:3200,perT:420},Mumbai:{base:4800,perT:640}};
+const MIX={M15:[1,2,4],M20:[1,1.5,3],M25:[1,1,2]};
+const GST=0.18,BAG_CUFT=1.25,DRY=1.54;
+const $=s=>document.querySelector(s);
+const inr=n=>'₹'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const byId=id=>P.find(p=>p.id===id);
+let cart={},cat='All',query='',dest='Solapur';
+try{cart=JSON.parse(localStorage.getItem('bmsa_cart')||'{}');dest=localStorage.getItem('bmsa_dest')||dest}catch(e){cart={}}
+const save=()=>{try{localStorage.setItem('bmsa_cart',JSON.stringify(cart));localStorage.setItem('bmsa_dest',dest)}catch(e){}};
+
+/* Toasts */
+function toast(msg,type='success'){const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),3200)}
+
+/* Pricing */
+function tierPct(p,q){const t=(p.tiers||[]).slice().sort((a,b)=>b.min-a.min).find(t=>q>=t.min);return t?t.pct:0}
+function calc(){
+  let gross=0,disc=0,wt=0;const items=[];
+  for(const [id,q] of Object.entries(cart)){const p=byId(id);if(!p||q<=0)continue;
+    const g=p.price*q,pct=tierPct(p,q),d=g*pct/100;gross+=g;disc+=d;wt+=p.wt*q;items.push({p,q,g,pct,d,net:g-d})}
+  const f=DEST[dest],freight=items.length?Math.round(f.base+f.perT*wt/1000):0;
+  const taxable=gross-disc+freight,cgst=taxable*GST/2,sgst=cgst;
+  return{items,gross,disc,wt,freight,taxable,cgst,sgst,total:taxable+cgst+sgst}
+}
+
+/* Catalog */
+function stockBadge(s){return s<=0?'<span class="badge out">Out of stock</span>':s<50?`<span class="badge low">Low: ${s.toLocaleString('en-IN')} left</span>`:`<span class="badge ok">In stock: ${s.toLocaleString('en-IN')}</span>`}
+function tierText(p){return p.tiers.slice().sort((a,b)=>a.min-b.min).map(t=>`${t.pct}% off at ${t.min.toLocaleString('en-IN')}+`).join(' / ')}
+function renderTabs(){const cats=['All',...new Set(P.map(p=>p.cat))];
+  $('#tabs').innerHTML=cats.map(c=>`<button class="tab" aria-pressed="${c===cat}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}
+function renderGrid(){
+  const q=query.toLowerCase();
+  const list=P.filter(p=>(cat==='All'||p.cat===cat)&&(!q||[p.name,p.is,p.grade,p.cat].join(' ').toLowerCase().includes(q)));
+  $('#count').textContent=`${list.length} of ${P.length} materials`;
+  $('#grid').innerHTML=list.length?list.map(p=>`<article class="panel card">
+    <img loading="lazy" src="${imgSrc(p)}" alt="${esc(p.name)}" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27600%27 height=%27300%27%3E%3Crect fill=%27%23CBD5E1%27 width=%27600%27 height=%27300%27/%3E%3C/svg%3E'">
+    <div class="cb"><div class="meta"><span class="badge is">${esc(p.is)}</span><span class="badge">${esc(p.grade)}</span>${stockBadge(p.stock)}</div>
+    <h3>${esc(p.name)}</h3><div class="spec">${esc(p.spec)}</div><div class="tiers">${tierText(p)}</div>
+    <div class="price"><b>${inr(p.price).replace('.00','')}</b><span>per ${esc(p.unit)}</span></div>
+    <div class="addrow"><input type="number" min="1" value="1" aria-label="Quantity for ${esc(p.name)}" id="n-${p.id}"><button class="btn" data-add="${p.id}" ${p.stock<=0?'disabled':''}>Add to order</button></div></div></article>`).join(''):'<p class="empty">No materials match your search.</p>'}
+
+/* Cart */
+function add(id,q){const p=byId(id);q=Math.floor(q);if(!p||!(q>0))return toast('Enter a valid quantity','error');
+  const n=(cart[id]||0)+q;if(n>p.stock){cart[id]=p.stock;toast(`Only ${p.stock.toLocaleString('en-IN')} ${p.unit} available`,'info')}else cart[id]=n;save();renderCart()}
+function setQ(id,q){q=Math.floor(q);const p=byId(id);if(!(q>0))delete cart[id];else cart[id]=Math.min(q,p.stock);save();renderCart()}
+function renderCart(){
+  const c=calc();$('#badge').textContent=c.items.length;
+  $('#lines').innerHTML=c.items.length?c.items.map(({p,q,net,pct})=>`<div class="line"><div><strong>${esc(p.name)}</strong></div><div style="text-align:right;font-family:'IBM Plex Mono',monospace">${inr(net)}</div>
+    <div class="q"><button data-dec="${p.id}" aria-label="Decrease">−</button><input type="number" min="1" value="${q}" data-set="${p.id}" aria-label="Quantity"><button data-inc="${p.id}" aria-label="Increase">+</button><span class="muted" style="color:var(--mute)">${esc(p.unit)}${pct?` · ${pct}% off`:''}</span></div>
+    <div style="text-align:right"><button class="rm" data-rm="${p.id}">Remove</button></div></div>`).join(''):'<div class="empty">Your order is empty.<br>Add materials or use the estimator.</div>';
+  const r=(l,v,cls='')=>`<div class="row ${cls}"><span>${l}</span><span>${v}</span></div>`;
+  $('#totals').innerHTML=r('Subtotal',inr(c.gross))+(c.disc?r('Volume discount','−'+inr(c.disc),'disc'):'')+r(`Freight to ${dest}`,inr(c.freight))+r('Taxable value',inr(c.taxable))+r('CGST (9%)',inr(c.cgst))+r('SGST (9%)',inr(c.sgst))+r('Total payable',inr(c.total),'grand');
+  $('#checkout').disabled=!c.items.length;$('#clear').disabled=!c.items.length;
+}
+
+/* Estimator */
+function estimate(){
+  const L=+$('#eL').value,W=+$('#eW').value,T=+$('#eT').value,w=+$('#eWs').value;
+  if(!(L>0&&W>0&&T>0&&byId('cem1')&&byId('ag1')&&byId('ag2')))return null;
+  const wet=L*W*T/12*(1+w),dry=wet*DRY,[c,s,a]=MIX[$('#eM').value],sum=c+s+a;
+  const bags=Math.ceil(dry*c/sum/BAG_CUFT),sand=Math.ceil(dry*s/sum),agg=Math.ceil(dry*a/sum);
+  const cost=bags*byId('cem1').price+sand*byId('ag1').price+agg*byId('ag2').price;
+  return{wet,bags,sand,agg,cost}
+}
+function renderEst(){const e=estimate();
+  $('#estTable').innerHTML=e?`<tr><td>Wet volume</td><td>${e.wet.toFixed(1)} cu.ft (${(e.wet*0.0283168).toFixed(2)} cu.m)</td></tr>
+  <tr><td>Cement (OPC 53)</td><td>${e.bags} bags</td></tr><tr><td>M-Sand</td><td>${e.sand.toLocaleString('en-IN')} cu.ft</td></tr>
+  <tr><td>20 mm aggregate</td><td>${e.agg.toLocaleString('en-IN')} cu.ft</td></tr><tr class="tot"><td>Estimated material cost</td><td>${inr(e.cost)}</td></tr>`:'<tr><td>Enter valid slab dimensions.</td></tr>';
+  $('#estAdd').disabled=!e}
+
+/* Modal */
+let lastFocus=null;
+const openM=id=>{lastFocus=document.activeElement;const m=$('#'+id);m.classList.add('open');const f=m.querySelector('input,select');f&&f.focus()};
+const closeM=m=>{m.classList.remove('open');lastFocus&&lastFocus.focus&&lastFocus.focus()};
+const fillDealers=()=>{const l=[...DL].sort((a,b)=>(b.city===dest)-(a.city===dest));$('#dealer').innerHTML='<option value="">Any available dealer</option>'+l.map(d=>`<option value="${esc(d.name)}">${esc(d.name)} (${esc(d.city)})</option>`).join('')};
+const openModal=()=>{fillDealers();openM('modal')},closeModal=()=>closeM($('#modal'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.querySelector('.modal.open');if(m)closeM(m);else toggleCart(false)}});
+document.addEventListener('mousedown',e=>{const m=e.target.closest&&e.target.closest('.modal');if(m&&(e.target===m||e.target.hasAttribute('data-close')))closeM(m)});
+function toggleCart(open){$('#aside').classList.toggle('open',open);$('#closeCart').style.display=open?'block':'none'}
+const gstOk=v=>/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(v);
+$('#gst').addEventListener('input',e=>{const v=e.target.value.toUpperCase().trim();e.target.value=v;const h=$('#gstHint');
+  if(!v){h.textContent='Optional for retail buyers. Required to claim input tax credit.';h.className='hint'}
+  else if(gstOk(v)){h.textContent='Format looks valid (not verified with the GST portal).';h.className='hint'}
+  else{h.textContent='Does not match the 15-character GSTIN format. You can still continue.';h.className='hint bad'}});
+
+/* Export */
+function details(){return{name:$('#cName').value.trim()||'Walk-in customer',gst:$('#gst').value.trim()||'Not provided',addr:$('#addr').value.trim()||dest,dealer:$('#dealer').value||'Unassigned',ref:'BMSA-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*9000+1000)}}
+function rows(c){return c.items.map(({p,q,g,pct,net})=>[p.name,p.is,q+' '+p.unit,p.price,pct+'%',net])}
+function exportPDF(){try{
+  if(!window.jspdf)throw new Error('PDF library not loaded (check connection)');
+  const c=calc();if(!c.items.length)return toast('Add items before exporting','error');
+  const d=details(),doc=new window.jspdf.jsPDF();
+  doc.setFontSize(16);doc.text('Quotation '+d.ref,14,16);doc.setFontSize(10);
+  doc.text(`Customer: ${d.name}   GST ID: ${d.gst}`,14,24);doc.text(`Delivery: ${d.addr} (${dest})`,14,30);
+  doc.autoTable({startY:36,head:[['Item','IS code','Qty','Rate (INR)','Disc.','Amount (INR)']],body:rows(c).map(r=>[r[0],r[1],r[2],r[3].toFixed(2),r[4],r[5].toFixed(2)]),headStyles:{fillColor:[15,23,42]},styles:{fontSize:9}});
+  const y=doc.lastAutoTable.finalY+8,L=[['Subtotal',c.gross],['Volume discount',-c.disc],['Freight',c.freight],['CGST 9%',c.cgst],['SGST 9%',c.sgst],['Total payable',c.total]];
+  L.forEach((l,i)=>{doc.text(l[0],120,y+i*6);doc.text(l[1].toFixed(2),196,y+i*6,{align:'right'})});
+  doc.save(d.ref+'.pdf');toast('PDF exported')}catch(e){console.error(e);toast('PDF export failed: '+e.message,'error')}}
+function exportXLSX(){try{
+  if(!window.XLSX)throw new Error('XLSX library not loaded (check connection)');
+  const c=calc();if(!c.items.length)return toast('Add items before exporting','error');
+  const d=details(),aoa=[['Quotation',d.ref],['Customer',d.name],['GST / Business ID',d.gst],['Delivery',d.addr],[],['Item','IS code','Qty','Unit','Rate','Discount %','Amount'],
+   ...c.items.map(({p,q,pct,net})=>[p.name,p.is,q,p.unit,p.price,pct,Number(net.toFixed(2))]),[],
+   ['','','','','','Subtotal',+c.gross.toFixed(2)],['','','','','','Volume discount',-c.disc.toFixed(2)],['','','','','','Freight',c.freight],['','','','','','CGST 9%',+c.cgst.toFixed(2)],['','','','','','SGST 9%',+c.sgst.toFixed(2)],['','','','','','Total',+c.total.toFixed(2)]];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),'Quotation');XLSX.writeFile(wb,d.ref+'.xlsx');toast('XLSX exported')}catch(e){console.error(e);toast('XLSX export failed: '+e.message,'error')}}
+
+/* Wiring */
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.cat){cat=t.dataset.cat;renderTabs();renderGrid()}
+  else if(t.dataset.add){const id=t.dataset.add;add(id,+$('#n-'+id).value);toast('Added: '+byId(id).name)}
+  else if(t.dataset.inc)add(t.dataset.inc,1);
+  else if(t.dataset.dec)setQ(t.dataset.dec,(cart[t.dataset.dec]||0)-1);
+  else if(t.dataset.rm){setQ(t.dataset.rm,0);toast('Item removed','info')}});
+$('#lines').addEventListener('change',e=>{if(e.target.dataset.set)setQ(e.target.dataset.set,+e.target.value)});
+$('#q').addEventListener('input',e=>{query=e.target.value.trim();renderGrid()});
+['eL','eW','eT','eM','eWs'].forEach(i=>$('#'+i).addEventListener('input',renderEst));
+$('#estAdd').onclick=()=>{const e=estimate();if(!e)return;add('cem1',e.bags);add('ag1',e.sand);add('ag2',e.agg);toast(`Added ${e.bags} bags, ${e.sand} cu.ft sand, ${e.agg} cu.ft aggregate`)};
+$('#dest').innerHTML=Object.keys(DEST).map(d=>`<option>${d}</option>`).join('');$('#dest').value=dest;
+$('#dest').onchange=e=>{dest=e.target.value;save();renderCart();toast('Freight updated for '+dest,'info')};
+$('#clear').onclick=()=>{cart={};save();renderCart();toast('Order cleared','info')};
+$('#checkout').onclick=openModal;$('#xPdf').onclick=exportPDF;$('#xXls').onclick=exportXLSX;
+$('#place').onclick=()=>{const c=calc();if(!c.items.length)return;const d=details();
+  ORD.unshift({ref:d.ref,date:new Date().toISOString(),customer:d.name,gst:d.gst,dealer:d.dealer,dest,total:c.total,items:c.items.map(({p,q,net})=>({name:p.name,q,unit:p.unit,net}))});
+  c.items.forEach(({p,q})=>{p.stock=Math.max(0,p.stock-q)});saveLS('bmsa_orders',ORD);savP();
+  closeModal();toast(`Order request ${d.ref} submitted. Total ${inr(c.total)}`);cart={};save();renderCart();renderGrid()};
+$('#openCart').onclick=()=>toggleCart(true);$('#closeCart').onclick=()=>toggleCart(false);
+$('#aside').addEventListener('mousedown',e=>{if(e.target.id==='aside')toggleCart(false)});
+/* ===== Admin ===== */
+let adm=false,authed=false,atab='materials',pImg='';
+const catsAll=()=>[...new Set(P.map(p=>p.cat))];
+function refreshShop(){if(cat!=='All'&&!catsAll().includes(cat))cat='All';renderTabs();renderGrid();renderCart();renderEst()}
+function setAdmin(on){adm=on;$('#shop').hidden=on;$('#admin').hidden=!on;$('#q').hidden=on;$('#openCart').hidden=on;$('#adminBtn').textContent=on?'Exit admin':'Admin';if(on)renderAdmin();else toggleCart(false)}
+$('#adminBtn').onclick=()=>{if(adm)setAdmin(false);else if(authed)setAdmin(true);else openM('lm')};
+function login(){if($('#lUser').value.trim()==='admin'&&$('#lPass').value==='admin123'){authed=true;closeM($('#lm'));$('#lPass').value='';setAdmin(true);toast('Signed in as admin')}else toast('Invalid username or password','error')}
+$('#lgo').onclick=login;$('#lPass').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+
+function renderAdmin(){
+  const rev=ORD.reduce((s,o)=>s+o.total,0),inv=P.reduce((s,p)=>s+p.price*p.stock,0);
+  const st=(l,v)=>`<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $('#aStats').innerHTML=st('Materials',P.length)+st('Dealers',DL.length)+st('Orders',ORD.length)+st('Order value',inr(rev))+st('Inventory value',inr(inv))+st('Low stock (under 50)',P.filter(p=>p.stock<50).length);
+  document.querySelectorAll('[data-atab]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.atab===atab));
+  const th=a=>'<thead><tr>'+a.map(x=>`<th>${x}</th>`).join('')+'</tr></thead>';
+  const bt=(a,id,l,c='')=>`<button class="btn ghost mini ${c}" data-act="${a}" data-id="${esc(id)}">${l}</button>`;
+  const head=(t,btns)=>`<div class="sechead"><h2>${t}</h2><div class="acts">${btns}</div></div>`;
+  let h='';
+  if(atab==='materials')h=head('Materials','<button class="btn ghost mini danger" data-act="preset">Reset to defaults</button><button class="btn" data-act="padd">Add material</button>')+`<div class="panel tw"><table class="tb">${th(['Image','Name','Category','IS code','Price','Stock',''])}<tbody>${P.map(p=>`<tr><td><img src="${esc(imgSrc(p))}" alt="" onerror="this.style.visibility='hidden'"></td><td>${esc(p.name)}</td><td>${esc(p.cat)}</td><td>${esc(p.is)}</td><td class="n">${inr(p.price)} / ${esc(p.unit)}</td><td class="n">${p.stock.toLocaleString('en-IN')}</td><td style="white-space:nowrap">${bt('pedit',p.id,'Edit')} ${bt('pdel',p.id,'Delete','danger')}</td></tr>`).join('')}</tbody></table></div>`;
+  else if(atab==='dealers')h=head('Dealers','<button class="btn" data-act="dadd">Add dealer</button>')+`<div class="panel tw"><table class="tb">${th(['Name','City','Phone','Supplies',''])}<tbody>${DL.map(d=>`<tr><td>${esc(d.name)}</td><td>${esc(d.city)}</td><td>${esc(d.phone)}</td><td>${esc(d.supply)}</td><td style="white-space:nowrap">${bt('dedit',d.id,'Edit')} ${bt('ddel',d.id,'Delete','danger')}</td></tr>`).join('')}</tbody></table></div>`;
+  else h=head('Orders',ORD.length?'<button class="btn ghost mini danger" data-act="oclear">Clear history</button>':'')+(ORD.length?`<div class="panel tw"><table class="tb">${th(['Reference','Date','Customer','Dealer','Destination','Total'])}<tbody>${ORD.map(o=>`<tr><td>${esc(o.ref)}</td><td>${new Date(o.date).toLocaleDateString('en-IN')}</td><td>${esc(o.customer)}</td><td>${esc(o.dealer)}</td><td>${esc(o.dest)}</td><td class="n">${inr(o.total)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="panel empty">No orders placed yet.</div>');
+  $('#aBody').innerHTML=h;
+}
+const setPrev=()=>{const el=$('#pPrev');if(pImg)el.src=imgSrc({img:pImg});else el.removeAttribute('src')};
+function openP(id){const p=id?byId(id):null,v=(k,x)=>{$('#'+k).value=x??''};$('#pm').dataset.id=id;$('#pmt').textContent=p?'Edit material':'Add material';
+  v('pName',p?.name);v('pCat',p?.cat);v('pIs',p?.is);v('pGrade',p?.grade);v('pUnit',p?.unit);v('pPrice',p?.price);v('pWt',p?.wt);v('pStock',p?.stock);v('pSpec',p?.spec);
+  const t=(p?.tiers||[]).slice().sort((a,b)=>a.min-b.min);v('pT1m',t[0]?.min);v('pT1p',t[0]?.pct);v('pT2m',t[1]?.min);v('pT2p',t[1]?.pct);
+  pImg=p?.img||'';v('pUrl',!pImg||pImg.startsWith('data:')?'':imgSrc({img:pImg}));$('#pFile').value='';setPrev();
+  $('#catList').innerHTML=catsAll().map(c=>`<option value="${esc(c)}">`).join('');openM('pm')}
+$('#pUrl').addEventListener('input',e=>{pImg=e.target.value.trim();setPrev()});
+$('#pFile').onchange=e=>{const f=e.target.files[0];if(!f)return;if(!f.type.startsWith('image/'))return toast('Choose an image file','error');
+  const r=new FileReader();r.onerror=()=>toast('Could not read the file','error');
+  r.onload=()=>{const im=new Image();im.onerror=()=>toast('Could not decode the image','error');
+    im.onload=()=>{const k=Math.min(1,640/im.width),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);pImg=c.toDataURL('image/jpeg',.75);$('#pUrl').value='';setPrev();toast('Image attached','info')};im.src=r.result};
+  r.readAsDataURL(f)};
+$('#pSave').onclick=()=>{const g=k=>$('#'+k).value.trim(),id=$('#pm').dataset.id;
+  const p={id:id||'u'+Date.now().toString(36),name:g('pName'),cat:g('pCat'),is:g('pIs')||'NA',grade:g('pGrade')||'NA',unit:g('pUnit'),price:+g('pPrice'),wt:+g('pWt')||0,stock:Math.max(0,Math.floor(+g('pStock')||0)),spec:g('pSpec'),img:pImg,
+    tiers:[['pT1m','pT1p'],['pT2m','pT2p']].map(([m,d])=>({min:+g(m),pct:+g(d)})).filter(t=>t.min>0&&t.pct>0&&t.pct<=50)};
+  if(!p.name||!p.cat||!p.unit||!(p.price>0))return toast('Name, category, unit and a price above zero are required','error');
+  const i=P.findIndex(x=>x.id===p.id);if(i>=0)P[i]=p;else P.push(p);
+  savP();closeM($('#pm'));refreshShop();renderAdmin();toast('Material saved')};
+function openD(id){const d=id?DL.find(x=>x.id===id):null;$('#dm').dataset.id=id;$('#dmt').textContent=d?'Edit dealer':'Add dealer';
+  $('#dCity').innerHTML=Object.keys(DEST).map(c=>`<option>${c}</option>`).join('');
+  $('#dName').value=d?.name||'';$('#dCity').value=d?.city||'Solapur';$('#dPhone').value=d?.phone||'';$('#dSupply').value=d?.supply||'';openM('dm')}
+$('#dSave').onclick=()=>{const id=$('#dm').dataset.id,d={id:id||'d'+Date.now().toString(36),name:$('#dName').value.trim(),city:$('#dCity').value,phone:$('#dPhone').value.trim(),supply:$('#dSupply').value.trim()};
+  if(!d.name)return toast('Dealer name is required','error');
+  const i=DL.findIndex(x=>x.id===d.id);if(i>=0)DL[i]=d;else DL.push(d);savD();closeM($('#dm'));renderAdmin();toast('Dealer saved')};
+$('#admin').addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.atab){atab=t.dataset.atab;return renderAdmin()}
+  const a=t.dataset.act,id=t.dataset.id;
+  if(a==='padd')return openP('');if(a==='pedit')return openP(id);if(a==='dadd')return openD('');if(a==='dedit')return openD(id);
+  if(!a)return;
+  if(!t.dataset.armed){t.dataset.armed='1';const o=t.textContent;t.textContent='Click again to confirm';setTimeout(()=>{delete t.dataset.armed;t.textContent=o},3000);return}
+  if(a==='pdel'){P=P.filter(p=>p.id!==id);delete cart[id];save();savP();refreshShop();toast('Material deleted','info')}
+  else if(a==='ddel'){DL=DL.filter(d=>d.id!==id);savD();toast('Dealer deleted','info')}
+  else if(a==='preset'){P=DEF_P.map(p=>({...p}));savP();refreshShop();toast('Catalog reset to defaults','info')}
+  else if(a==='oclear'){ORD=[];saveLS('bmsa_orders',ORD);toast('Order history cleared','info')}
+  renderAdmin()});
+
+renderTabs();renderGrid();renderEst();renderCart();
+</script>
+</body>
+</html>
